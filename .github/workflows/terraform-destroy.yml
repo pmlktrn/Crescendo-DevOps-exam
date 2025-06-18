@@ -1,7 +1,7 @@
 name: Terraform Manual Destroy
 
 on:
-  workflow_dispatch:  # Manual trigger only
+  workflow_dispatch:
 
 jobs:
   terraform-destroy:
@@ -29,6 +29,8 @@ jobs:
 
     - name: Terraform Init
       run: terraform init
+      working-directory: ./terraform
 
     - name: Terraform Destroy
       run: terraform destroy -auto-approve
+      working-directory: ./terraform
