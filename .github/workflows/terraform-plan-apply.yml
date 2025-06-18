@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:  # Allows manual triggering for apply
+  workflow_dispatch:
 
 jobs:
   terraform:
@@ -31,10 +31,15 @@ jobs:
 
     - name: Terraform Init
       run: terraform init
+      working-directory: ./terraform
 
     - name: Terraform Plan
-      run: terraform plan -out=tfplan
+      run: terraform plan
+      working-directory: ./terraform
 
     - name: Terraform Apply (manual only)
       if: github.event_name == 'workflow_dispatch'
-      run: terraform apply -auto-approve tfplan
+      run: |
+        terraform plan -out=tfplan
+        terraform apply -auto-approve tfplan
+      working-directory: ./terraform
