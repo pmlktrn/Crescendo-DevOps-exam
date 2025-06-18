@@ -1,23 +1,26 @@
-#VPC and Subnets
-
+# Data Sources
 data "aws_availability_zones" "available" {}
 
+# VPC
 resource "aws_vpc" "main" {
   cidr_block = var.vpc_cidr
 }
 
+# Internet Gateway
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.main.id
 }
 
+# Public Subnets
 resource "aws_subnet" "public" {
-  count             = 2
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = var.public_subnets[count.index]
-  availability_zone = data.aws_availability_zones.available.names[count.index]
+  count                   = 2
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = var.public_subnets[count.index]
+  availability_zone       = data.aws_availability_zones.available.names[count.index]
   map_public_ip_on_launch = true
 }
 
+# Private Subnets
 resource "aws_subnet" "private" {
   count             = 2
   vpc_id            = aws_vpc.main.id
@@ -25,17 +28,18 @@ resource "aws_subnet" "private" {
   availability_zone = data.aws_availability_zones.available.names[count.index]
 }
 
-#Route tables and NAT Gateway
-
+# Elastic IP for NAT Gateway (FIXED)
 resource "aws_eip" "nat" {
-  vpc = true
+  domain = "vpc"
 }
 
+# NAT Gateway
 resource "aws_nat_gateway" "nat" {
   allocation_id = aws_eip.nat.id
   subnet_id     = aws_subnet.public[0].id
 }
 
+# Public Route Table
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
 
@@ -45,12 +49,14 @@ resource "aws_route_table" "public" {
   }
 }
 
+# Associate Route Table with Public Subnets
 resource "aws_route_table_association" "public_assoc" {
   count          = 2
   subnet_id      = aws_subnet.public[count.index].id
   route_table_id = aws_route_table.public.id
 }
 
+# Private Route Table
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
 
@@ -60,14 +66,14 @@ resource "aws_route_table" "private" {
   }
 }
 
+# Associate Route Table with Private Subnets
 resource "aws_route_table_association" "private_assoc" {
   count          = 2
   subnet_id      = aws_subnet.private[count.index].id
   route_table_id = aws_route_table.private.id
 }
 
-#Security Group
-
+# Security Group
 resource "aws_security_group" "ec2_sg" {
   name   = "ec2_sg"
   vpc_id = aws_vpc.main.id
@@ -94,13 +100,12 @@ resource "aws_security_group" "ec2_sg" {
   }
 }
 
-#EC2 Instance in private subnet
-
+# EC2 Instance in Private Subnet
 resource "aws_instance" "web" {
-  ami           = var.ami
-  instance_type = var.instance_type
-  subnet_id     = aws_subnet.private[0].id
-  vpc_security_group_ids = [aws_security_group.ec2_sg.id]
+  ami                         = var.ami
+  instance_type               = var.instance_type
+  subnet_id                   = aws_subnet.private[0].id
+  vpc_security_group_ids      = [aws_security_group.ec2_sg.id]
   associate_public_ip_address = false
 
   user_data = <<-EOF
