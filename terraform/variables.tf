@@ -43,7 +43,7 @@ variable "db_name" {
 variable "db_username" {
   description = "Master username for the RDS database"
   type        = string
-  default     = "admin"
+  default     = "crescendo"
 }
 
 variable "db_password" {
